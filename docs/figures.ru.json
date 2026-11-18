@@ -1,0 +1,114 @@
+{
+  "_about": "Russian text for docs_figures.py (titles, axis labels, series labels, notes). Number templates: {v} is the value with a decimal comma.",
+
+  "period": {
+    "title": "Shadow execution помогает, только если T ≤ 50 мкс",
+    "subtitle": "Intel i7-8700, POLL, Δt = 10 мс, тик включён",
+    "xlabel": "период прогрева T, мкс",
+    "ylabel": "штраф первого вызова, нс",
+    "zone": "цикл успевает остыть",
+    "series": {
+      "spin": "spin",
+      "spinpf": "spin + prefetch",
+      "spinshadow": "spin + shadow execution"
+    }
+  },
+
+  "size": {
+    "title": "Shadow execution дорожает с кодом, на c128 prefetch лучше",
+    "subtitle": "Intel i7-8700, spin без тика, Δt = 10 мс, T = 50 мкс",
+    "ylabel": "сокращение штрафа spin, %",
+    "removed": "{v}%",
+    "cost": "{v}% ядра",
+    "panels": {
+      "spinshadow": "Shadow execution",
+      "spinpf": "Prefetch"
+    },
+    "points": {
+      "cpptrader": "S\nCppTrader",
+      "tx": "tx\n+ отправка",
+      "c32": "c32\n32 КБ кода",
+      "c128": "c128\n128 КБ кода"
+    }
+  },
+
+  "online_system": {
+    "title": "Shadow execution не поднимает хвост системы, а сон поднимает",
+    "subtitle": "Реальный поток Bitstamp, архитектура A, задержка остальных пар",
+    "xlabel": "ядро ОС → конец обработчика, мкс",
+    "quantiles": ["p50", "p99", "p999"],
+    "modes": {
+      "spin": "spin",
+      "spinshadow": "spin +\nshadow execution",
+      "sleep": "сон"
+    }
+  },
+
+  "tick": {
+    "title": "Штраф после прерывания растёт только спустя ~100 мкс",
+    "subtitle": "Intel i7-8700, POLL, nohz_full, Δt = 10 мс",
+    "xlabel": "от последнего прерывания до события, мкс",
+    "ylabel": "штраф первого вызова, нс",
+    "clean": "spin, ни одного прерывания за паузу: {v} нс",
+    "series": {
+      "spin": "spin",
+      "spinshadow": "spin + shadow execution"
+    }
+  },
+
+  "l3_neighbour": {
+    "title": "С соседом по L3 shadow execution сокращает штраф на 95–99%, prefetch — на 80%",
+    "subtitle": "Intel i7-8700, POLL, Δt = 10 мс; сосед на другом ядре",
+    "ylabel": "штраф первого вызова, нс",
+    "panels": {
+      "no": "нет соседа",
+      "mem64m": "64 МБ данных",
+      "mix": "компиляция"
+    },
+    "modes": {
+      "spin": "spin",
+      "spinpf": "+ prefetch",
+      "spinshadow": "+ shadow\nexecution"
+    }
+  },
+
+  "counters_c6": {
+    "title": "Prefetch возвращает кэши и TLB, но не фронтенд",
+    "subtitle": "Intel i7-8700, сон в C6, Δt = 10 мс; счётчики первого вызова",
+    "xlabel": "осталось от уровня после сна, %",
+    "ref": "как после сна",
+    "value": "{v}%",
+    "panels": {
+      "pfwake": "Prefetch",
+      "prewake": "Prewake"
+    },
+    "groups": {
+      "cache": "кэши и TLB",
+      "frontend": "фронтенд"
+    },
+    "rows": {
+      "l1d_miss": "промахи L1d",
+      "code_l2_miss": "код из L3 мимо L2",
+      "dtlb_walk": "обходы страниц: данные",
+      "itlb_walk": "обходы страниц: код",
+      "ic_miss": "промахи L1i",
+      "br_miss": "branch misses",
+      "baclears": "BTB re-steers"
+    }
+  },
+
+  "prefetch_sleep": {
+    "title": "После сна prefetch сокращает штраф вдвое, prewake — почти до нуля",
+    "subtitle": "Intel i7-8700, Δt = 10 мс, пробуждение за 200 мкс до события",
+    "ylabel": "штраф первого вызова, нс",
+    "panels": {
+      "3": "после C3",
+      "8": "после C6"
+    },
+    "modes": {
+      "none": "сон",
+      "pfwake": "pfwake\n(prefetch)",
+      "prewake": "prewake"
+    }
+  }
+}

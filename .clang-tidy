@@ -1,0 +1,15 @@
+Checks: >-
+  -*,
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  modernize-use-nullptr,
+  modernize-use-override
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(^|/)src/.*\.h$'
+FormatStyle: file
+SystemHeaders: false
+CheckOptions:
+  # Shifting a positive literal (64U << 20) is fine.
+  bugprone-signed-bitwise.IgnorePositiveIntegerLiterals: true

@@ -1,0 +1,27 @@
+build/
+results/
+online/
+third_party/
+data/
+__pycache__/
+.DS_Store
+
+# One-off batch scripts from the measurement nights; kept locally, not needed by the docs.
+amd-c1.sh
+amd-next.sh
+amd-night.sh
+evening.sh
+night.sh
+final.sh
+intel-queue.sh
+extra.sh
+extra.py
+sys.sh
+nz.sh
+ladder.sh
+ladder.py
+cnt.sh
+cnt.py
+gaps.py
+plot.py
+resctrl.sh
