@@ -1,0 +1,41 @@
+{
+  "shadow_target_replay": {
+    "columns": ["block", "rare_vs_spin_a_ns", "rare_vs_spin_b_ns", "other_vs_spin_a_ns", "other_vs_spin_b_ns"],
+    "rows": [
+      [2, -343.69, -196.68, -106.749, -14.0],
+      [3, 8.78, 16.61, -23.387, 9.613],
+      [4, -149.64, -144.0, -85.285, -80.0],
+      [5, -65.42, 156.02, -1.068, -20.068],
+      [6, 10.3, -117.4, 75.0, -75.726],
+      [7, 39.63, -14.37, 35.0, -110.0]
+    ]
+  },
+  "prefetch_broadwell": {
+    "columns": ["block", "rare_vs_spin_ns", "rare_vs_spincollect_ns", "attempt_cost_pct"],
+    "rows": [
+      [49, 675.595, -447.68, 0.5603],
+      [50, 777.62, 1273.96, 0.4448],
+      [51, -1015.4, -363.5, 0.4763],
+      [52, -286.72, -425.56, 0.5103]
+    ]
+  },
+  "cat_broadwell": {
+    "columns": ["handler_ways", "seed", "busy_p99_saving_ns", "neighbour_rate_change_pct"],
+    "rows": [
+      ["low", 101, 3262, -3.7247],
+      ["high", 101, 3561, 0.0262],
+      ["low", 202, 3341, -4.3816],
+      ["high", 202, 3097, -3.5801],
+      ["low", 303, 3474, -4.3792],
+      ["high", 303, 3290, -4.3146]
+    ]
+  },
+  "active_dose_broadwell": {
+    "columns": ["seed", "handler_delta_ns", "handler_aa_ns", "l1i_miss_delta", "l1i_miss_aa"],
+    "rows": [
+      [61, 222.95, -4.7, 28.07, 1.04],
+      [73, 197.625, 4.7, 28.635, -1.13],
+      [89, 229.4, 4.7, 28.91, -0.06]
+    ]
+  }
+}

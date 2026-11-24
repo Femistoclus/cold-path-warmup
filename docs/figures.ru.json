@@ -2,11 +2,10 @@
   "_about": "Russian text for docs_figures.py (titles, axis labels, series labels, notes). Number templates: {v} is the value with a decimal comma.",
 
   "period": {
-    "title": "Shadow execution помогает, только если T ≤ 50 мкс",
-    "subtitle": "Intel i7-8700, POLL, Δt = 10 мс, тик включён",
+    "title": "При T до 50 мкс штраф с shadow укладывался в 10 нс",
+    "subtitle": "Intel i7-8700, bench, POLL, Δt = 10 мс, тик включён",
     "xlabel": "период прогрева T, мкс",
     "ylabel": "штраф первого вызова, нс",
-    "zone": "цикл успевает остыть",
     "series": {
       "spin": "spin",
       "spinpf": "spin + prefetch",
@@ -15,8 +14,8 @@
   },
 
   "size": {
-    "title": "Shadow execution дорожает с кодом, на c128 prefetch лучше",
-    "subtitle": "Intel i7-8700, spin без тика, Δt = 10 мс, T = 50 мкс",
+    "title": "На c128 prefetch снимает больше штрафа при меньшей цене",
+    "subtitle": "Intel i7-8700, bench, spin с nohz_full, Δt = 10 мс, T = 50 мкс",
     "ylabel": "сокращение штрафа spin, %",
     "removed": "{v}%",
     "cost": "{v}% ядра",
@@ -33,9 +32,9 @@
   },
 
   "online_system": {
-    "title": "Shadow execution не поднимает хвост системы, а сон поднимает",
-    "subtitle": "Реальный поток Bitstamp, архитектура A, задержка остальных пар",
-    "xlabel": "ядро ОС → конец обработчика, мкс",
+    "title": "Сон увеличил p999 остальных пар до 64 мкс",
+    "subtitle": "Intel i7-8700, живой Bitstamp feed, архитектура A",
+    "xlabel": "оценка RX → конец обработки, мкс",
     "quantiles": ["p50", "p99", "p999"],
     "modes": {
       "spin": "spin",
@@ -45,11 +44,11 @@
   },
 
   "tick": {
-    "title": "Штраф после прерывания растёт только спустя ~100 мкс",
-    "subtitle": "Intel i7-8700, POLL, nohz_full, Δt = 10 мс",
-    "xlabel": "от последнего прерывания до события, мкс",
+    "title": "Штраф spin выше в группах от 100 мкс после разрыва",
+    "subtitle": "Intel i7-8700, bench, POLL, Δt = 10 мс, nohz_full, с perf и без perf",
+    "xlabel": "от последнего разрыва цикла до события, мкс",
     "ylabel": "штраф первого вызова, нс",
-    "clean": "spin, ни одного прерывания за паузу: {v} нс",
+    "clean": "spin без обнаруженных разрывов — {v} нс",
     "series": {
       "spin": "spin",
       "spinshadow": "spin + shadow execution"
@@ -57,12 +56,12 @@
   },
 
   "l3_neighbour": {
-    "title": "С соседом по L3 shadow execution сокращает штраф на 95–99%, prefetch — на 80%",
-    "subtitle": "Intel i7-8700, POLL, Δt = 10 мс; сосед на другом ядре",
+    "title": "Сосед по L3 увеличивает штраф первого вызова",
+    "subtitle": "Intel i7-8700, bench, POLL, Δt = 10 мс, сосед на другом ядре",
     "ylabel": "штраф первого вызова, нс",
     "panels": {
       "no": "нет соседа",
-      "mem64m": "64 МБ данных",
+      "mem64m": "64 МиБ данных",
       "mix": "компиляция"
     },
     "modes": {
@@ -73,10 +72,9 @@
   },
 
   "counters_c6": {
-    "title": "Prefetch возвращает кэши и TLB, но не фронтенд",
-    "subtitle": "Intel i7-8700, сон в C6, Δt = 10 мс; счётчики первого вызова",
-    "xlabel": "осталось от уровня после сна, %",
-    "ref": "как после сна",
+    "title": "Prefetch снижает промахи L1d и page walks",
+    "subtitle": "Intel i7-8700, bench, C6+, Δt = 10 мс. Уровень none — 100%.",
+    "ref": "уровень none",
     "value": "{v}%",
     "panels": {
       "pfwake": "Prefetch",
@@ -98,17 +96,57 @@
   },
 
   "prefetch_sleep": {
-    "title": "После сна prefetch сокращает штраф вдвое, prewake — почти до нуля",
-    "subtitle": "Intel i7-8700, Δt = 10 мс, пробуждение за 200 мкс до события",
+    "title": "Prefetch сокращает штраф при обеих политиках сна",
+    "subtitle": "Intel i7-8700, bench, Δt = 10 мс, пробуждение за 200 мкс до события",
     "ylabel": "штраф первого вызова, нс",
     "panels": {
-      "3": "после C3",
-      "8": "после C6"
+      "3": "до C3",
+      "8": "C6 и глубже"
     },
     "modes": {
       "none": "сон",
       "pfwake": "pfwake\n(prefetch)",
       "prewake": "prewake"
     }
+  },
+
+  "shadow_target_replay": {
+    "title": "Выигрыш shadow по полной задержке меняет знак",
+    "subtitle": "Broadwell, один CPU, шесть блоков Bitstamp. Вправо — быстрее.",
+    "panels": [
+      {"title": "LTC/BTC · p99", "xlabel": "экономия RX → конец, нс"},
+      {"title": "Остальные пары · p99.9", "xlabel": "экономия RX → конец, нс"}
+    ],
+    "series": ["относительно spin A", "относительно spin B"]
+  },
+
+  "prefetch_broadwell": {
+    "title": "Prefetch укладывается в бюджет при T = 400 мкс",
+    "subtitle": "Broadwell, четыре блока Bitstamp. Пунктир показывает лимит 1%.",
+    "panels": [
+      {"title": "LTC/BTC · p99", "xlabel": "экономия RX → конец, нс"},
+      {"title": "Цена попыток", "xlabel": "время ядра, %"}
+    ],
+    "series": ["относительно двух spin", "относительно spincollect"]
+  },
+
+  "cat_broadwell": {
+    "title": "Разделение LLC снижает p99 с соседом",
+    "subtitle": "Broadwell, bench, сосед пишет в массив 64 МиБ, квоты LLC 4 и 16 путей",
+    "panels": [
+      {"title": "CppTrader · p99", "xlabel": "экономия срок → конец, мкс"},
+      {"title": "Сосед · throughput", "xlabel": "изменение скорости, %"}
+    ],
+    "ways": {"low": "Низ · seed", "high": "Верх · seed"}
+  },
+
+  "active_dose_broadwell": {
+    "title": "Чужая работа удлиняет первый вызов",
+    "subtitle": "Broadwell, bench, пауза 10 мс, поправка по пустому обработчику",
+    "panels": [
+      {"title": "Первый вызов · p50", "xlabel": "изменение длительности, нс"},
+      {"title": "L1i · ICACHE.MISSES", "xlabel": "изменение числа промахов на вызов"}
+    ],
+    "series": ["4096 чтений против нуля", "A/A с нулевой дозой"]
   }
 }

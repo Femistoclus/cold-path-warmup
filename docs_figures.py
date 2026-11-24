@@ -6,11 +6,12 @@ this file holds no Russian text. Inputs and run selection are those of figures.p
 
   period.png          penalty vs warm-up period T in the spin loop                    (figures.fig04 runs)
   size.png            share of the spin penalty removed by shadow execution / prefetch (figures.fig13 runs)
-  online_system.png   live stream, architecture A, other pairs: p50 / p99 / p999      (tails-L1.txt; fig08 CCDF)
-  tick.png            penalty vs time since the last interrupt, Δt = 10 ms             (figures.fig20 runs)
+  online_system.png   live feed, architecture A, other pairs: p50 / p99 / p999       (tails-L1.txt; fig08 CCDF)
+  tick.png            penalty vs time since the last gap in the loop, Δt = 10 ms      (figures.fig20 runs)
   l3_neighbour.png    penalty with a neighbour sharing L3 on another core              (iso.py cells)
   counters_c6.png     counters after C6 left by prefetch and prewake, % of sleep       (figures.fig06 runs)
   prefetch_sleep.png  penalty after C3 / C6: sleep, pfwake, prewake                    (figures.fig05 runs)
+  *_broadwell.png and shadow_target_replay.png  verified per-block data              (docs/broadwell.json)
 
 Penalty = p50(first call after the pause) − p50(hot call of the same run), ns. The values each figure
 draws are printed, to be checked against the numbers in the documents.
@@ -36,6 +37,7 @@ from matplotlib import ticker  # noqa: E402
 
 HERE = F.HERE
 TEXT = os.path.join(HERE, "docs", "figures.ru.json")
+BROADWELL = os.path.join(HERE, "docs", "broadwell.json")
 OUT = os.path.join(HERE, "docs", "img")
 TAILS = os.path.join(F.ROOT, "online", "tails-L1.txt")
 W, DPI = 9.6, 200  # inches, dots per inch: ~1900 px wide, readable when GitHub scales it to the page
@@ -167,8 +169,6 @@ def fig_period(t, out):
     ts = list(by_t)
     fig, (ax,) = canvas(t, 5.4, left=0.95, right=0.3, bottom=0.85)
     x0, x1 = ts[0] / 1.35, ts[-1] * 1.35
-    ax.axvspan(74, x1, color=GRID, alpha=.55, linewidth=0, zorder=0)
-    ax.text(80, 172, t["zone"], ha="left", va="top", fontsize=12.5, color=INK2)
     for m, pts in lines.items():
         x, y = zip(*pts)
         ax.plot(x, y, color=F.col(m), linewidth=2.6, marker="o", markersize=8.5, markeredgecolor=F.SURF,
@@ -305,7 +305,7 @@ def fig_online(t, out):
     save(fig, name, out)
 
 
-# ---------------------------------------------------------------- 4. tick: time since the last interrupt
+# ---------------------------------------------------------------- 4. tick: time since the last gap in the loop
 def fig_tick(t, out):
     name = "tick.png"
     rr = F.runs("nztB-10") + F.runs("nztT-10")  # with and without the tick, pooled (fig20, left panel)
@@ -330,7 +330,7 @@ def fig_tick(t, out):
             clean[m] = F.q(ex[gap < 0], .5)
         show(f"tick {m} p50 by bin", [(f"{lo}-{hi}us", fnum(v)) for (lo, hi), (_, v)
                                        in zip(zip(edges[:-1], edges[1:]), pts)])
-        show(f"tick {m}", [("no interrupt", fnum(clean.get(m, float("nan")))),
+        show(f"tick {m}", [("no detected gap", fnum(clean.get(m, float("nan")))),
                            ("<50us pooled", fnum(F.q(ex[(gap >= 0) & (gap < 50)], .5))),
                            ("100us-1ms pooled", fnum(F.q(ex[(gap >= 100) & (gap < 1000)], .5)))])
     fig, (ax,) = canvas(t, 5.2, left=0.95, right=0.3, bottom=0.85)
@@ -481,7 +481,7 @@ def fig_prefetch_sleep(t, out):
             v.append(F.med([r.pen(m, DT) for r in rr]) if rr else float("nan"))
         if all(x == x for x in v):
             vals[pol] = v
-            show(f"prefetch_sleep C{'6' if pol == '8' else pol}", [(m, fnum(x)) for (m, _), x in zip(SLEEP_MODES, v)])
+            show(f"prefetch_sleep {t['panels'][pol]}", [(m, fnum(x)) for (m, _), x in zip(SLEEP_MODES, v)])
     if len(vals) < 2:
         return skip(name, "no runs *-pA{3,8}-{0,d,c,dc}-r*")
     fig, axes = canvas(t, 4.85, 2, left=0.95, right=0.2, bottom=0.85, panel_titles=True, wspace=0.1)
@@ -496,9 +496,102 @@ def fig_prefetch_sleep(t, out):
     save(fig, name, out)
 
 
+def broadwell_rows(key):
+    with open(BROADWELL, encoding="utf-8") as source:
+        table = json.load(source)[key]
+    return [dict(zip(table["columns"], row, strict=True)) for row in table["rows"]]
+
+
+def horizontal_values(ax, rows, series, *, digits=0, limits=None, signed=True):
+    positions = np.arange(len(rows))
+    height = 0.55 / len(series)
+    all_values = []
+    for i, (key, color) in enumerate(series):
+        values = [row[key] for row in rows]
+        y = positions + (i - (len(series) - 1) / 2) * height
+        ax.barh(y, values, height=height * .86, color=color, zorder=2)
+        for yy, value in zip(y, values):
+            label = ("+" if signed and round(value, digits) > 0 else "") + fnum(value, digits)
+            ax.annotate(label, (value, yy), xytext=(4 if value >= 0 else -4, 0), textcoords="offset points",
+                        ha="left" if value >= 0 else "right", va="center", fontsize=10.5, color=INK)
+        all_values.extend(values)
+    extent = 1.26 * max(map(abs, all_values))
+    ax.set_xlim(*(limits if limits else (-extent, extent)))
+    ax.set_ylim(len(rows) - .52, -.48)
+    ax.axvline(0, color=AXIS, linewidth=1.1, zorder=1)
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(5))
+    comma_axis(ax, "x")
+
+
+def broadwell_canvas(text, rows, *, height=5.4, left=1.06):
+    fig, axes = canvas(text, height, 2, left=left, bottom=1.12, panel_titles=True, wspace=.23, grid="x")
+    axes[0].set_yticks(range(len(rows)), rows)
+    for ax, panel in zip(axes, text["panels"]):
+        ax.set_title(panel["title"])
+        ax.set_xlabel(panel["xlabel"])
+    return fig, axes
+
+
+def series_key(fig, colors, labels):
+    handles = [plt.Line2D([], [], color=color, linewidth=8, solid_capstyle="butt") for color in colors]
+    fig.legend(handles, labels, loc="lower center", ncol=len(labels), frameon=False, fontsize=11)
+
+
+def fig_shadow_target_replay(t, out):
+    name = "shadow_target_replay"
+    rows = broadwell_rows(name)
+    fig, axes = broadwell_canvas(t, [row["block"] for row in rows], height=5.8)
+    colors = [F.col("spin"), F.col("empty")]
+    for ax, scope in zip(axes, ("rare", "other")):
+        horizontal_values(ax, rows, [(f"{scope}_vs_spin_{arm}_ns", color) for arm, color in zip("ab", colors)])
+    series_key(fig, colors, t["series"])
+    save(fig, name + ".png", out)
+
+
+def fig_prefetch_broadwell(t, out):
+    name = "prefetch_broadwell"
+    rows = broadwell_rows(name)
+    fig, axes = broadwell_canvas(t, [row["block"] for row in rows])
+    colors = [F.col("spin"), F.col("empty")]
+    horizontal_values(axes[0], rows, list(zip(("rare_vs_spin_ns", "rare_vs_spincollect_ns"), colors)))
+    horizontal_values(axes[1], rows, [("attempt_cost_pct", F.col("spinpf"))],
+                      digits=3, limits=(0, 1.13), signed=False)
+    axes[1].axvline(1, color=REF, linestyle="--", linewidth=1.2, zorder=1)
+    axes[1].set_xticks([0, .25, .5, .75, 1])
+    series_key(fig, colors, t["series"])
+    save(fig, name + ".png", out)
+
+
+def fig_cat_broadwell(t, out):
+    name = "cat_broadwell"
+    rows = broadwell_rows(name)
+    labels = [f'{t["ways"][row["handler_ways"]]} {row["seed"]}' for row in rows]
+    fig, axes = broadwell_canvas(t, labels, height=5.5, left=1.6)
+    for row in rows:
+        row["saving_us"] = row["busy_p99_saving_ns"] / 1_000
+    horizontal_values(axes[0], rows, [("saving_us", F.col("spin"))], digits=2, limits=(0, 4.6), signed=False)
+    horizontal_values(axes[1], rows, [("neighbour_rate_change_pct", F.col("empty"))],
+                      digits=2, limits=(-5.8, 1))
+    save(fig, name + ".png", out)
+
+
+def fig_active_dose_broadwell(t, out):
+    name = "active_dose_broadwell"
+    rows = broadwell_rows(name)
+    fig, axes = broadwell_canvas(t, [f'seed {row["seed"]}' for row in rows], height=4.9, left=1.25)
+    colors = [F.col("spin"), F.col("empty")]
+    for ax, keys, digits, limits in zip(axes, (("handler_delta_ns", "handler_aa_ns"), ("l1i_miss_delta", "l1i_miss_aa")),
+                                         (0, 2), ((-40, 300), (-6, 38))):
+        horizontal_values(ax, rows, list(zip(keys, colors)), digits=digits, limits=limits)
+    series_key(fig, colors, t["series"])
+    save(fig, name + ".png", out)
+
+
 # ---------------------------------------------------------------- main
 FIGS = [("period", fig_period), ("size", fig_size), ("online_system", fig_online), ("tick", fig_tick),
-        ("l3_neighbour", fig_l3), ("counters_c6", fig_counters), ("prefetch_sleep", fig_prefetch_sleep)]
+        ("l3_neighbour", fig_l3), ("counters_c6", fig_counters), ("prefetch_sleep", fig_prefetch_sleep),
+        ("shadow_target_replay", fig_shadow_target_replay), ("prefetch_broadwell", fig_prefetch_broadwell),
+        ("cat_broadwell", fig_cat_broadwell), ("active_dose_broadwell", fig_active_dose_broadwell)]
 
 
 def main():
